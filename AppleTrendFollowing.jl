@@ -21,37 +21,52 @@ begin
 	plot(df.timestamp, df.AdjClose)
 end
 
+# ╔═╡ 788f57e4-13da-48a9-ac9b-b7079d3b060d
+md"""
+# What determines trends?
+
+A market is in an up-trend if the equity keeps establishing higher highs without piercing the lowest low.
+
+A market is in a down-trend if the equity keeps establishing lower lows without piercing the highest high
+"""
+
 # ╔═╡ 2298c513-8b64-407c-a34e-d729e1e17622
 begin
 
-"""
-	Finding the runs in trending data.
-"""
-function find_trends(df, moe)
-	# The high high is "resistance", the low low is "support"
-	max = min = prev_value = values(df.AdjClose[1])[1]
-	vals = []
-	for value in df.AdjClose
-		if value[2] > max
-			max = value[2]
-		elseif value[2] < min
-			min = value[2]
-		end
+	"""
+		Finding the runs in trending data.
+	"""
+	function find_trends(df, moe)
+		# The high high is "resistance", the low low is "support"
+		max = min = prev_value = global_max = global_min = values(df.AdjClose[1])[1]
+		vals = []
+		for value in df.AdjClose
+			if value[2] > max
+				max = value[2]
+			elseif value[2] < min
+				min = value[2]
+			end
+	
+			if value[2] < prev_value && prev_value == max
+				min = max
+			elseif value[2] > prev_value && prev_value == min
+				max = min
+			end
 
-		if value[2] < prev_value && prev_value == max
-			@info "Local maxima @ $(value), clearing low"
-			min = max
-			push!(vals, value[1])
-		elseif value[2] > prev_value && prev_value == min
-			push!(vals, value[1])
-			@info "Local minima @ $(value), clearing high"
-			max = min
+			if max > global_max
+				@info "Market is trending up"
+				global_max = max
+				push!(vals, value[1])
+			elseif min < global_min
+				@info "Market is trending down"
+				push!(vals, value[1])
+				global_min = min
+			end
+	
+			prev_value = value[2]
 		end
-
-		prev_value = value[2]
+		vals
 	end
-	vals
-end
 
 	ts = find_trends(data, .05)
 	plot(df.timestamp, df.AdjClose; title = "AAPL with trend markers")
@@ -1253,6 +1268,7 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╠═b8a0e482-12aa-11ef-1eeb-0de25bf1db52
 # ╠═2532d2e1-d460-47e9-9a13-5ffaa3265c8b
+# ╠═788f57e4-13da-48a9-ac9b-b7079d3b060d
 # ╠═2298c513-8b64-407c-a34e-d729e1e17622
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
