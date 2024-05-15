@@ -14,7 +14,7 @@ end
 
 # ╔═╡ 2532d2e1-d460-47e9-9a13-5ffaa3265c8b
 begin
-	data = yahoo(:AAPL, YahooOpt(period1=now() - Dates.Year(2)))
+	data = yahoo(:AAPL, YahooOpt(period1=now() - Dates.Week(4)))
 	df = DataFrame(data)
 	
 	# plot!(df, seriestype=:candlestick)
@@ -53,14 +53,17 @@ begin
 				max = min
 			end
 
+			# TODO: Currently this logs that its a downward trend when we set a new low low. It should only be if we pierce the previous low low that we are in a downward trend.
 			if max > global_max
-				@info "Market is trending up"
+				@info "Market is trending up @ $(value)"
 				global_max = max
+				global_min = min # The last minimum becomes the current global min.
 				push!(vals, value[1])
 			elseif min < global_min
-				@info "Market is trending down"
+				@info "Market is trending down @ $(value)"
 				push!(vals, value[1])
 				global_min = min
+				global_max = max # The last maximum becomes the current global max
 			end
 	
 			prev_value = value[2]
